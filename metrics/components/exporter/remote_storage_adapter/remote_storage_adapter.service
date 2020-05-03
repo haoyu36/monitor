@@ -1,0 +1,15 @@
+[Unit]
+Description=zzijin
+
+[Service]
+Environment=INFLUXDB_PW=admin
+ExecStart=/usr/local/bin/remote_storage_adapter --influxdb-url=http://<IP:POER> --influxdb.username=admin --influxdb.database=prometheus --influxdb.retention-policy=autogen
+ExecReload=/bin/kill -HUP $MAINPID
+Type=simple
+KillMode=process
+Restart=on-failure
+RestartSec=42s
+
+[Install]
+WantedBy=multi-user.target
+

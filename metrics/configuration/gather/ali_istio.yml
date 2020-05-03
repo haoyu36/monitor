@@ -1,0 +1,138 @@
+global:
+    scrape_interval: 15s
+  scrape_configs:
+  - job_name: istio-mesh
+    kubernetes_sd_configs:
+    - namespaces:
+        names:
+        - istio-system
+      role: endpoints
+    relabel_configs:
+    - action: keep
+      regex: istio-telemetry;prometheus
+      source_labels:
+      - __meta_kubernetes_service_name
+      - __meta_kubernetes_endpoint_port_name
+  - job_name: envoy-stats
+    kubernetes_sd_configs:
+    - role: pod
+    metrics_path: /stats/prometheus
+    relabel_configs:
+    - action: keep
+      regex: .*-envoy-prom
+      source_labels:
+      - __meta_kubernetes_pod_container_port_name
+    - action: replace
+      regex: ([^:]+)(?::\d+)?;(\d+)
+      replacement: $1:15090
+      source_labels:
+      - __address__
+      - __meta_kubernetes_pod_annotation_prometheus_io_port
+      target_label: __address__
+    - action: labelmap
+      regex: __meta_kubernetes_pod_label_(.+)
+    - action: replace
+      source_labels:
+      - __meta_kubernetes_namespace
+      target_label: namespace
+    - action: replace
+      source_labels:
+      - __meta_kubernetes_pod_name
+      target_label: pod_name
+  - job_name: istio-policy
+    kubernetes_sd_configs:
+    - namespaces:
+        names:
+        - istio-system
+      role: endpoints
+    relabel_configs:
+    - action: keep
+      regex: istio-policy;http-monitoring
+      source_labels:
+      - __meta_kubernetes_service_name
+      - __meta_kubernetes_endpoint_port_name
+  - job_name: istio-telemetry
+    kubernetes_sd_configs:
+    - namespaces:
+        names:
+        - istio-system
+      role: endpoints
+    relabel_configs:
+    - action: keep
+      regex: istio-telemetry;http-monitoring
+      source_labels:
+      - __meta_kubernetes_service_name
+      - __meta_kubernetes_endpoint_port_name
+  - job_name: pilot
+    kubernetes_sd_configs:
+    - namespaces:
+        names:
+        - istio-system
+      role: endpoints
+    relabel_configs:
+    - action: keep
+      regex: istio-pilot;http-monitoring
+      source_labels:
+      - __meta_kubernetes_service_name
+      - __meta_kubernetes_endpoint_port_name
+  - job_name: citadel
+    kubernetes_sd_configs:
+    - namespaces:
+        names:
+        - istio-system
+      role: endpoints
+    relabel_configs:
+    - action: keep
+      regex: istio-citadel;http-monitoring
+      source_labels:
+      - __meta_kubernetes_service_name
+      - __meta_kubernetes_endpoint_port_name
+  - job_name: kubernetes-pods-istio-secure
+    kubernetes_sd_configs:
+    - role: pod
+    relabel_configs:
+    - action: keep
+      regex: "true"
+      source_labels:
+      - __meta_kubernetes_pod_annotation_prometheus_io_scrape
+    - action: keep
+      regex: (([^;]+);([^;]*))|(([^;]*);(true))
+      source_labels:
+      - __meta_kubernetes_pod_annotation_sidecar_istio_io_status
+      - __meta_kubernetes_pod_annotation_istio_mtls
+    - action: drop
+      regex: (http)
+      source_labels:
+      - __meta_kubernetes_pod_annotation_prometheus_io_scheme
+    - action: replace
+      regex: (.+)
+      source_labels:
+      - __meta_kubernetes_pod_annotation_prometheus_io_path
+      target_label: __metrics_path__
+    - action: keep
+      regex: ([^:]+):(\d+)
+      source_labels:
+      - __address__
+    - action: replace
+      regex: ([^:]+)(?::\d+)?;(\d+)
+      replacement: $1:$2
+      source_labels:
+      - __address__
+      - __meta_kubernetes_pod_annotation_prometheus_io_port
+      target_label: __address__
+    - action: labelmap
+      regex: __meta_kubernetes_pod_label_(.+)
+    - action: replace
+      source_labels:
+      - __meta_kubernetes_namespace
+      target_label: namespace
+    - action: replace
+      source_labels:
+      - __meta_kubernetes_pod_name
+      target_label: pod_name
+    scheme: https
+    tls_config:
+      ca_file: /etc/istio-certs/root-cert.pem
+      cert_file: /etc/istio-certs/cert-chain.pem
+      insecure_skip_verify: true
+      key_file: /etc/istio-certs/key.pem

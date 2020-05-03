@@ -1,0 +1,28 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: monitoring-ingress
+  namespace: monitoring
+spec:
+  rules:
+  # - host: prom.zijin.haoyu95.cn
+  #   http:
+  #     paths:
+  #     - path: /
+  #       backend:
+  #         serviceName: prometheus-k8s
+  #         servicePort: web
+  - host: grafana.zijin.haoyu95.cn
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: grafana
+          servicePort: http
+  - host: alert.zijin.haoyu95.cn
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: alertmanager-main
+          servicePort: web

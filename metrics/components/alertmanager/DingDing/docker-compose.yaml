@@ -1,0 +1,10 @@
+version: "3.3"
+services:
+  prometheus-webhook-alert:
+    image: registry.cn-shenzhen.aliyuncs.com/haoyu36/prometheus-webhook-dingtalk:v1.4.0
+    container_name: prometheus-webhook-alertmanagers
+    hostname: webhook-alertmanagers
+    restart: always
+    ports:
+    - "8060:8060"
+    entrypoint: /bin/prometheus-webhook-dingtalk --ding.profile="webhook1=yourwebhook"

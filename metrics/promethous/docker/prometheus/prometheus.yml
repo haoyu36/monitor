@@ -1,0 +1,70 @@
+global:
+  scrape_interval:     15s
+  evaluation_interval: 15s
+
+alerting:
+  alertmanagers:
+  - static_configs:
+    - targets:
+      - 127.0.0.1:9093
+
+rule_files:
+  # 记录规则
+  # - 'recording/*_record.yml'
+  - 'recording/node_record.yml'
+
+  # 报警规则
+  # - 'alerting/*_alert.yml'
+  - 'alerting/node_alert.yml'
+  - 'alerting/prometheus_alert.yml'
+
+
+# # Remote write configuration (for Graphite, OpenTSDB, or InfluxDB).
+# remote_write:
+#   - url: "http://192.168.1.163:9201/write"
+
+# # Remote read configuration (for InfluxDB only at the moment).
+# remote_read:
+#   - url: "http://192.168.1.163:9201/read"
+
+
+
+scrape_configs:
+  - job_name: 'prometheus'
+    scrape_interval: 5s
+    static_configs:
+    - targets: 
+      - 'localhost:9090'
+
+
+  # 使用 node-exporter 监控主机
+  # - job_name: 'node-exporter-out'    # k8s 集群外部
+  #   scrape_interval: 5s
+  #   file_sd_configs:    # 使用文件服务发现的方式
+  #     - files:
+  #       - targets/nodes.json
+
+  # 使用 cadvisor 监控容器
+  # - job_name: 'cadvisor'
+  #   scrape_interval: 5s
+  #   static_configs:
+  #     - targets: 
+  #       - '192.168.5.214:8080'
+
+  # 监控 mysql
+  # - job_name: 'mysql-exporter'
+  #   file_sd_configs:    # 使用文件服务发现的方式
+  #     - files:
+  #       - targets/mysql.json
+
+  - job_name: 'federate'
+    scrape_interval: 5s
+    honor_labels: true
+    metrics_path: '/federate'
+    params:
+      'match[]':
+        - '{__name__=~".+"}'
+    file_sd_configs:    # 使用文件服务发现的方式
+      - files:
+        - targets/federate.json
+
