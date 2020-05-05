@@ -2,7 +2,7 @@
 # 拉取最新的 manifests 并修改
 
 
-# git clone https://github.com/coreos/kube-prometheus.git
+git clone https://github.com/coreos/kube-prometheus.git
 cp -r kube-prometheus/manifests .
 cd manifests
 

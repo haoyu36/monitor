@@ -30,29 +30,9 @@
 Prometheus 有一个内置的仪表盘和图形界面，适合调试和构建警报。如果想要更好的可视化界面，构建大量的仪表盘，可以使用 Grafana
 
 
-## 1.3 存储
+## 1.3 安装
 
-Prometheus 是一种基于时间序列 (time series) 的模型， 时间序列是一系列有序的等时间间隔的数据。时间序列数据库是为时间序列数据明确设计的数据库
-
-
-
-Prometheus TSDB 在单机上可以支撑每秒百万级的时间序列写入
-
-Prometheus 的性能取决于配置、所搜集时间序列的数量以及服务器上规则的复杂性。Prometheus 会将最新的数据缓存在内存的，所以会有一些的内存消耗，并且每个收集的时间序列、查询和记录规则都会消耗进程内存。如果采集数据较为频繁，会消耗大量的磁盘空间
-
-
-Prometheus TSDB 默认时序数据每 2h 存储一个 block。每个 block 由一个目录组成。最新写入的数据被保存在内存 block 中，达到2h后写入磁盘。为了防止程序崩溃导致数据丢失，实现了WAL（Write-Ahead-Log）机制。block 保存一定的时间后会被压缩
-
-每个样本通常为 1～2 个字节
-
-
-## 1.4 高可用
-
-Prometheus 支持多种安装方式，最简单的是使用二进制安装，详见[官网安装文档](https://prometheus.io/docs/prometheus/latest/installation/)。这里是我的安装方式：[haoyu36/monitor](https://github.com/haoyu36/monitor)，本文所有的安装和配置都能在这里找到
-
-Prometheus 单机安装非常方便。但整个系统的吞吐量上限、伸缩性、高可用也会受限于单台服务器
-
-单机无法存储大量的监控数据，可以通过指定远程存储来扩展磁盘，也可以配置联邦集群以让 Prometheus 服务器从另一台 Prometheus 服务器抓取选定的时间序列
+Prometheus 支持多种安装方式，最简单的是直接使用二进制安装，详见[官网安装文档](https://prometheus.io/docs/prometheus/latest/installation/)。这里是我的安装方式：[haoyu36/monitor](https://github.com/haoyu36/monitor)，本文所有的安装和配置都能在这里找到
 
 
 # 二：配置
@@ -131,39 +111,11 @@ scrape_configs:
 k8s 的[服务发现机制](https://prometheus.io/docs/prometheus/latest/configuration/configuration/#kubernetes_sd_config)
 
 
-
-## 2.3 联邦集群
-
-联合集群可以让 Prometheus 服务器从另一台 Prometheus 服务器抓取选定的时间序列
-
-```yaml
-scrape_configs:
-  - job_name: 'federate'
-    scrape_interval: 15s
-
-    honor_labels: true
-    metrics_path: '/federate'    # Prometheus 服务器的端点
-
-    # 需要指定要公开的系列
-    params:
-      'match[]':
-        - '{job="prometheus"}'
-        - '{__name__=~"job:.*"}'
-
-    static_configs:
-      - targets:
-        - 'source-prometheus-1:9090'
-```
-
-- [官方联邦集群文档](https://prometheus.io/docs/prometheus/latest/federation/)
-
-
-## 2.4 Recording Rule
+## 2.3 Recording Rule
 
 `Recording Rule` 的用以预先计算比较复杂的、执行时间较长的PromQL语句，并将其执行结果保存成一条单独的时序，后续查询时直接返回，可以降低 Prometheus 的响应时间
 
 命名：`level:metric:operations`。level 表示聚合级别，以及规则输出的标签，metric 是指标名称，operations为应用指标的操作列表
-
 
 ```yaml
 groups:
@@ -179,11 +131,34 @@ groups:
           a: b
 ```
 
+## 2.4 Alerting Rule
 
-## 2.5 pushgateway
+`Alerting Rule` 主要用于告警的判定，Alerting Rule 会定义一条PromQL 语句，然后定时执行该PromQL语句并根据执行结果判断是否触发告警
 
-pushgateway 本身也是一个 http 服务器，使用 pushgateway 可以自定义监控数据
+```yaml
+groups:
+- name: example    # 告警组的名称
+  interval: 30    # 覆盖全局配置
+  rules:
+  # Alert for any instance that is unreachable for >5 minutes.
+  - alert: InstanceDown    # 告警名称
+    expr: up == 0    # PromQl 语句
+    for: 10s    # 告警触发的等待时间
+    # 自定义 label
+    labels:
+      severity: page
+    # 告警发生时，会发送 annotations 附加信息，也可以使用模版
+    annotations:
+      summary: "Instance {{ $labels.instance }} down"
+      description: "Alerting: {{ $labels.instance }} of job {{ $labels.job }} has been down for more than 10s minutes."
+```
 
+
+警报有三种状态：
+
+- Inactive: 警报未激活
+- Pending: 警报已满足测试表达式条件，但仍在等待 for 子句中指定的持续时间
+- Firing: 警报已满足测试表达式条件，并且 Pending 时间已超过 for 子句的持续时间
 
 
 # 三：PromQL
@@ -233,87 +208,12 @@ Prometheus 定义了4中不同的指标类型(metric type)：
 - increase: 计算一定范围内时间序列的增长总量，用于 Counter 类型
 - sum: 求和
 
-# 四：报警
-
-详细的报警见[官方文档](https://prometheus.io/docs/alerting/overview/)
-
-Alertmanage 用于对警报进行去重、分组、然后路由到不同的接收器
 
 
-## Alerting Rule
-
-`Alerting Rule` 主要用于告警的判定，Alerting Rule 会定义一条PromQL 语句，然后定时执行该PromQL语句并根据执行结果判断是否触发告警
-
-```yaml
-groups:
-- name: example    # 告警组的名称
-  interval: 30    # 覆盖全局配置
-  rules:
-  # Alert for any instance that is unreachable for >5 minutes.
-  - alert: InstanceDown    # 告警名称
-    expr: up == 0    # PromQl 语句
-    for: 10s    # 告警触发的等待时间
-    # 自定义 label
-    labels:
-      severity: page
-    # 告警发生时，会发送 annotations 附加信息，也可以使用模版
-    annotations:
-      summary: "Instance {{ $labels.instance }} down"
-      description: "Alerting: {{ $labels.instance }} of job {{ $labels.job }} has been down for more than 10s minutes."
-```
-
-
-## 报警处理
-
-```yaml
-# 警报全局配置
-global:
-  resolve_timeout: 5m
-
-# 保存警报模版的目录列表
-templates:
-- 'dingding.tmpl'
-
-# 路由，处理特定的传入警报
-route:
-  group_by: ['alertname']    # 警报分组的方式
-  group_wait: 10s
-  group_interval: 10s    # 重复发送警报等待的时间
-  repeat_interval: 1h
-  receiver: 'DingDing'
-
-# 警报的接收器
-receivers:
-- name: 'DingDing'
-  webhook_configs:
-  - url: 'http://192.168.5.214:8060/dingtalk/webhook1/send'
-    send_resolved: true
-
-```
-
-警报有三种状态：
-
-- Inactive: 警报未激活
-- Pending: 警报已满足测试表达式条件，但仍在等待 for 子句中指定的持续时间
-- Firing: 警报已满足测试表达式条件，并且 Pending 时间已超过 for 子句的持续时间
-
-
-
-# 五：扩展阅读
-
-## 资料
+# 四：扩展阅读
 
 - [prometheus官方文档](https://prometheus.io/docs/introduction/overview/)
 - [实战 Prometheus 搭建监控系统](https://www.aneasystone.com/archives/2018/11/prometheus-in-action.html)
 - [roaldnefs/awesome-prometheus](https://github.com/roaldnefs/awesome-prometheus)
 - [samber/awesome-prometheus-alerts](https://github.com/samber/awesome-prometheus-alerts/)
 - [reliable insights](https://www.robustperception.io/tag/prometheus)
-
-## 高可用
-
-- [thanos-io/thanos](https://github.com/thanos-io/thanos)
-- [m3db/m3](https://github.com/m3db/m3)
-
-## 书籍
-
-- prometheus监控实战
