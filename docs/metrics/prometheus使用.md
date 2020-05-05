@@ -42,6 +42,9 @@ Prometheus 支持多种安装方式，最简单的是直接使用二进制安装
 Prometheus 配置文件格式为 YAML，启动时通过参数 --config.file 来指定。[官方文档](https://prometheus.io/docs/prometheus/latest/configuration/configuration/)
 
 ```yaml
+# 指定配置文件路径
+--config.file=/etc/prometheus/prometheus.yml
+
 # 指定存储目录
 --storage.tsdb.path=/prometheus
 
@@ -59,6 +62,11 @@ global:
   scrape_interval: 15s    # how often Prometheus will scrape targets
   evaluation_interval: 15s    # how often Prometheus will evaluate rules (Recording Rule And Alerting Rule)
 
+  # Attach these labels to any time series or alerts when communicating with
+  # external systems (federation, remote storage, Alertmanager).
+  external_labels:
+    monitor: 'codelab-monitor'
+
 # 警报配置
 alerting:
   alertmanagers:
@@ -72,9 +80,10 @@ rule_files:
 
 # what resources Prometheus monitors
 scrape_configs:
+  # The job name is added as a label `job=<job_name>` to any timeseries scraped from this config
   # 一组用于相同采集目的的实例，通过一个任务 (Job) 进行管理
   - job_name: 'prometheus'
-    scrape_interval: 5s    # 覆盖全局配置
+    scrape_interval: 5s    # Override the global config
     static_configs:
     - targets:    # 监控目标
         - 'localhost:9090'
@@ -113,9 +122,9 @@ k8s 的[服务发现机制](https://prometheus.io/docs/prometheus/latest/configu
 
 ## 2.3 Recording Rule
 
-`Recording Rule` 的用以预先计算比较复杂的、执行时间较长的PromQL语句，并将其执行结果保存成一条单独的时序，后续查询时直接返回，可以降低 Prometheus 的响应时间
+`Recording Rule` 预先计算比较复杂的、执行时间较长的 PromQL 语句，并将其执行结果保存成一条单独的时序，后续查询时直接返回，可以降低 Prometheus 的响应时间
 
-命名：`level:metric:operations`。level 表示聚合级别，以及规则输出的标签，metric 是指标名称，operations为应用指标的操作列表
+记录规则的命名一般为：`level:metric:operations`，level 表示聚合级别，以及规则输出的标签，metric 是指标名称，operations为应用指标的操作列表
 
 ```yaml
 groups:
@@ -133,7 +142,7 @@ groups:
 
 ## 2.4 Alerting Rule
 
-`Alerting Rule` 主要用于告警的判定，Alerting Rule 会定义一条PromQL 语句，然后定时执行该PromQL语句并根据执行结果判断是否触发告警
+`Alerting Rule` 主要用于告警的条件，`Alerting Rule` 也会定义一条 PromQL 语句，然后定时执行该语句并根据执行结果判断是否触发告警
 
 ```yaml
 groups:
@@ -164,6 +173,8 @@ groups:
 # 三：PromQL
 
 PromQL 是 Prometheus 提供的结构化查询语言，支持Instant vector（瞬时值查询）、Range vector（范围查询）、多种function 以及多种聚合操作
+
+通过 Prometheus 内置的 expression browser 能够很方便的调试 PromQL
 
 ## 3.1 格式
 

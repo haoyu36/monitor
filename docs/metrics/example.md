@@ -1,6 +1,16 @@
 
 
 
+# Prometheus
+
+```shell
+# the actual amount of time between target scrapes
+prometheus_target_interval_length_seconds
+
+# the per-second rate of chunks being created in the self-scraped Prometheu
+rate(prometheus_tsdb_head_chunks_created_total[1m])
+
+```
 
 # CPU 
 

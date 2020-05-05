@@ -3,8 +3,9 @@
 
 详细的报警见[官方文档](https://prometheus.io/docs/alerting/overview/)
 
-Alertmanage 用于对警报进行去重、分组、然后路由到不同的接收器
+Alertmanage 用于设置 Prometheus 的警报，用于对警报进行去重、分组、然后路由到不同的接收器
 
+Alertmanage 是一个可以集群化的独立警报管理工具
 
 
 ## 报警处理
