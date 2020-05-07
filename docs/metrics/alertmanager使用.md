@@ -33,5 +33,5 @@ receivers:
   webhook_configs:
   - url: 'http://192.168.5.214:8060/dingtalk/webhook1/send'
     send_resolved: true
-
 ```
+

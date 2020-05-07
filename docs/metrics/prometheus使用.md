@@ -37,22 +37,21 @@ Prometheus 支持多种安装方式，最简单的是直接使用二进制安装
 
 # 二：配置
 
-配置文件定义了抓取作业及其实例有关的所有内容，以及哪些规则文件加载，配置文件可以通过热加载更新
 
-Prometheus 配置文件格式为 YAML，启动时通过参数 --config.file 来指定。[官方文档](https://prometheus.io/docs/prometheus/latest/configuration/configuration/)
+Prometheus 配置文件定义了抓取作业及其实例有关的所有内容，以及哪些规则文件加载，格式为 YAML，[官方配置文档](https://prometheus.io/docs/prometheus/latest/configuration/configuration/)
+
 
 ```yaml
-# 指定配置文件路径
---config.file=/etc/prometheus/prometheus.yml
-
-# 指定存储目录
---storage.tsdb.path=/prometheus
-
-# 指定数据保存的时间
---storage.tsdb.retention.time=15d
+--config.file="prometheus.yml"    # 指定配置文件路径
+--storage.tsdb.path=/prometheus    # 指定存储目录
+--storage.tsdb.retention.time=15d    # 指定数据保存的时间
+--web.enable-lifecycle    # 开启重载配置的 http 端点
 ```
 
-## 2.1 配置文件
+配置文件可以通过热加载更新, 命令 `curl -X POST http://127.0.0.1:9090/-/reload`
+
+
+## 2.1 基本配置
 
 配置文件的框架如下：
 
@@ -67,14 +66,14 @@ global:
   external_labels:
     monitor: 'codelab-monitor'
 
-# 警报配置
+# Alerting specifies settings related to the Alertmanager
 alerting:
   alertmanagers:
   - static_configs:
     - targets:
       - alertmanager:9093
 
-# 指定包含记录规则或警报规则的文件列表
+# file list, both Recording Rule and Alerting Rule
 rule_files:
   - 'alert.rules'
 
@@ -87,25 +86,14 @@ scrape_configs:
     static_configs:
     - targets:    # 监控目标
         - 'localhost:9090'
-      # 为上述 target 追加公共 label
-      labels:
-        name: haoyu
 ```
-
-## 2.2 Label
-
-标签名称由 ASCII 字符，数字，以及下划线组成， 其中 __ 开头属于 Prometheus 保留，标签的值可以是任何 Unicode 字符，支持中文
-
-通常时间序列都有一个 instance 标签和一个 job 标签
-
-标签可以定义目标，并为时间序列提供上下文。更改或添加标签会创建新的时间序列
-
-每个指标都自带有两个标签，Instance 和 job，job 是根据抓取作业中的作业名称设置的，一般用于描述正在监控事物的类型，Instance 用于标识目标，通常是目标地址的 IP 和端口
 
 
 ## 2.2 服务发现
 
-当被监控集群的规模较大时，需要使用服务发现的方式处理要监控资源的发现，而不是取手动修改配置文件，服务发现可以是文件，Consul、DNS 等等
+当被监控集群的规模较大时，需要使用服务发现的方式处理要监控资源的发现，而不是取手动修改配置文件，服务发现可以是文件，Consul、DNS、k8s 等等
+
+k8s 的[服务发现机制](https://prometheus.io/docs/prometheus/latest/configuration/configuration/#kubernetes_sd_config)
 
 
 ```yaml
@@ -117,7 +105,13 @@ scrape_configs:
         - targets/nodes.json
 ```
 
-k8s 的[服务发现机制](https://prometheus.io/docs/prometheus/latest/configuration/configuration/#kubernetes_sd_config)
+```json
+[{
+	"targets": [
+        "192.168.5.214:9100"
+    ]
+}]
+```
 
 
 ## 2.3 Recording Rule
@@ -129,13 +123,13 @@ k8s 的[服务发现机制](https://prometheus.io/docs/prometheus/latest/configu
 ```yaml
 groups:
     - name: node_rules    # 规则组名，全局唯一
-      interval: 30    # 覆盖全局配置
+      interval: 30
       # 可以定义多条记录规则
       rules:
       - record: instance:node_cpu:avg_rate5m    # 记录规则的名称，即 metric 名称
-        # PromQL 语句
+        # PromQL
         expr: 100 - avg (irate(node_cpu_seconds_total{job="node",mode="idle"}[5m])) by (instance) * 100
-        # 标签，追加到新生成的序列中，冲突覆盖
+        # add or overwrite Labels
         labels: 
           a: b
 ```
@@ -144,10 +138,17 @@ groups:
 
 `Alerting Rule` 主要用于告警的条件，`Alerting Rule` 也会定义一条 PromQL 语句，然后定时执行该语句并根据执行结果判断是否触发告警
 
+警报有三种状态：
+
+- Inactive: 警报未激活
+- Pending: 警报已满足测试表达式条件，但仍在等待 for 子句中指定的持续时间
+- Firing: 警报已满足测试表达式条件，并且 Pending 时间已超过 for 子句的持续时间
+
+
 ```yaml
 groups:
 - name: example    # 告警组的名称
-  interval: 30    # 覆盖全局配置
+  interval: 30
   rules:
   # Alert for any instance that is unreachable for >5 minutes.
   - alert: InstanceDown    # 告警名称
@@ -163,16 +164,27 @@ groups:
 ```
 
 
-警报有三种状态：
+## 2.5 Label
 
-- Inactive: 警报未激活
-- Pending: 警报已满足测试表达式条件，但仍在等待 for 子句中指定的持续时间
-- Firing: 警报已满足测试表达式条件，并且 Pending 时间已超过 for 子句的持续时间
+标签名称由 ASCII 字符，数字，以及下划线组成， 其中 __ 开头属于 Prometheus 保留，标签的值可以是任何 Unicode 字符，支持中文。标签可以定义目标，并为时间序列提供上下文。更改或添加标签会创建新的时间序列
+
+每个指标都自带有两个标签，Instance 和 job，job 是根据抓取作业中的作业名称设置的，一般用于描述正在监控事物的类型，Instance 用于标识目标，通常是目标地址的 IP 和端口
+
+```yaml
+scrape_configs:
+  - job_name: 'prometheus'
+    scrape_interval: 5s
+    static_configs:
+    - targets:
+        - 'localhost:9090'
+      labels:
+        name: haoyu
+```
 
 
 # 三：PromQL
 
-PromQL 是 Prometheus 提供的结构化查询语言，支持Instant vector（瞬时值查询）、Range vector（范围查询）、多种function 以及多种聚合操作
+PromQL 是 Prometheus 提供的结构化查询语言，支持 Instant vector（瞬时值查询）、Range vector（范围查询）、多种function 以及多种聚合操作
 
 通过 Prometheus 内置的 expression browser 能够很方便的调试 PromQL
 
@@ -206,10 +218,14 @@ Prometheus 定义了4中不同的指标类型(metric type)：
 
 ### 过滤
 
-- -=
-- !=
-- =~: 模糊匹配
+- =: 完全相同的标签
+- !=: 不相同的标签
+- =~: 正则匹配
+- !~: 不完全正则匹配的标签
 - [3m]: 查询3分钟内的指标，用于 Counter 指标
+- without: 从结果向量中删除列出的标签
+- by: 保留列出的标签
+
 
 
 ### 函数
@@ -220,8 +236,17 @@ Prometheus 定义了4中不同的指标类型(metric type)：
 - sum: 求和
 
 
+# 四：api
 
-# 四：扩展阅读
+```shell
+curl '{prometheus_url}/api/v1/query?query={promql}&time={time}'
+
+curl '{prometheus_url}/api/v1/query_range?query={promql}&start={start_time}&end={end_time}&step={step_time}'
+```
+
+
+
+# 五：扩展阅读
 
 - [prometheus官方文档](https://prometheus.io/docs/introduction/overview/)
 - [实战 Prometheus 搭建监控系统](https://www.aneasystone.com/archives/2018/11/prometheus-in-action.html)

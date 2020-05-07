@@ -1,8 +1,17 @@
 
 
-# 概述
 
-## 1.1 存储
+# 高可用
+
+Prometheus 单机安装非常方便。但整个系统的吞吐量上限、伸缩性、高可用也会受限于单台服务器
+
+单机无法存储大量的监控数据，可以通过指定远程存储来扩展磁盘，也可以配置联邦集群以让 Prometheus 服务器从另一台 Prometheus 服务器抓取选定的时间序列
+
+
+# 存储
+
+
+## 存储格式
 
 Prometheus 是一种基于时间序列 (time series) 的模型， 时间序列是一系列有序的等时间间隔的数据。时间序列数据库是为时间序列数据明确设计的数据库
 
@@ -16,12 +25,18 @@ Prometheus TSDB 默认时序数据每 2h 存储一个 block。每个 block 由�
 每个样本通常为 1～2 个字节
 
 
-## 1.2 高可用
+## 远程存储
 
-Prometheus 单机安装非常方便。但整个系统的吞吐量上限、伸缩性、高可用也会受限于单台服务器
 
-单机无法存储大量的监控数据，可以通过指定远程存储来扩展磁盘，也可以配置联邦集群以让 Prometheus 服务器从另一台 Prometheus 服务器抓取选定的时间序列
+```yaml
+# Remote write configuration (for Graphite, OpenTSDB, or InfluxDB).
+remote_write:
+  - url: "http://192.168.1.163:9201/write"
 
+# Remote read configuration (for InfluxDB only at the moment).
+remote_read:
+  - url: "http://192.168.1.163:9201/read"
+```
 
 
 # 联邦集群
@@ -48,6 +63,8 @@ scrape_configs:
 ```
 
 - [官方联邦集群文档](https://prometheus.io/docs/prometheus/latest/federation/)
+
+
 
 # 扩展阅读
 

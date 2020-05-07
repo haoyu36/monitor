@@ -11,6 +11,7 @@ services:
       - "--storage.tsdb.retention.time=15d"
       - "--web.console.libraries=/usr/share/prometheus/console_libraries"
       - "--web.console.templates=/usr/share/prometheus/consoles"
+      - --web.enable-lifecycle
     ports:
       - 9090:9090
     restart: always
