@@ -30,13 +30,7 @@
 Prometheus 有一个内置的仪表盘和图形界面，适合调试和构建警报。如果想要更好的可视化界面，构建大量的仪表盘，可以使用 Grafana
 
 
-## 1.3 安装
-
-Prometheus 支持多种安装方式，最简单的是直接使用二进制安装，详见[官网安装文档](https://prometheus.io/docs/prometheus/latest/installation/)。这里是我的安装方式：[haoyu36/monitor](https://github.com/haoyu36/monitor)，本文所有的安装和配置都能在这里找到
-
-
 # 二：配置
-
 
 Prometheus 配置文件定义了抓取作业及其实例有关的所有内容，以及哪些规则文件加载，格式为 YAML，[官方配置文档](https://prometheus.io/docs/prometheus/latest/configuration/configuration/)
 
@@ -73,7 +67,7 @@ alerting:
     - targets:
       - alertmanager:9093
 
-# file list, both Recording Rule and Alerting Rule
+# file list, Both Recording Rule and Alerting Rule
 rule_files:
   - 'alert.rules'
 
