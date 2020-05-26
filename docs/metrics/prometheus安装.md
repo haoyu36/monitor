@@ -28,10 +28,14 @@ Prometheus 支持多种安装方式，最简单的是直接使用二进制安装
 - [Prometheus Operator 高级配置](https://www.qikqiak.com/post/prometheus-operator-advance/)
 - [深度解析Istio telemetry V2](https://zhuanlan.zhihu.com/p/136112888)
 
+
 - [isito文档：通过 Prometheus 查询度量指标](https://istio.io/zh/docs/tasks/observability/metrics/querying-metrics/)
 - [isito文档：默认监控指标](https://preliminary.istio.io/zh/docs/reference/config/policy-and-telemetry/metrics/)
 
 
+```shell
+kubectl create secret generic additional-configs --from-file=prometheus-additional.yaml -n monitoring
+```
 
 # 扩展阅读
 
