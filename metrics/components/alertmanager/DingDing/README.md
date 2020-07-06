@@ -8,7 +8,7 @@
 
 
 
-# 参考资料
+# 相关阅读
 
 - [timonwong/prometheus-webhook-dingtalk](https://github.com/timonwong/prometheus-webhook-dingtalk)
 

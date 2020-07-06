@@ -1,0 +1,28 @@
+version: "3.3"
+services:
+  mongodb:
+    image: registry.cn-shenzhen.aliyuncs.com/haoyu36/mongodb_exporter:v0.11.0
+    environment:
+      MONGODB_URI: mongodb://<your ip>:27017
+    ports:
+      - 9216:9216
+    restart: always
+
+  cadvisor:
+    image: google/cadvisor:v0.33.0
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    ports:
+      - 8080:8080
+    restart: always
+
+  locust:
+    image: registry.cn-shenzhen.aliyuncs.com/haoyu36/locust_exporter:v0.3.0
+    environment:
+      LOCUST_EXPORTER_URI: http://192.168.1.133:8089
+    ports:
+      - 9646:9646
+    restart: always

@@ -12,6 +12,6 @@ chmod 777 ${exporter_name}/node_exporter
 /bin/cp -rf${exporter_name}/node_exporter /usr/local/bin/
 
 # 设置系统服务
-/bin/cp -rfnode_exporter.service /lib/systemd/system/
+/bin/cp -rf node_exporter.service /lib/systemd/system/
 systemctl enable node_exporter.service
 systemctl start node_exporter.service
