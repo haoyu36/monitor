@@ -1,15 +1,7 @@
 version: "3.3"
 services:
-  mongodb:
-    image: registry.cn-shenzhen.aliyuncs.com/haoyu36/mongodb_exporter:v0.11.0
-    environment:
-      MONGODB_URI: mongodb://<your ip>:27017
-    ports:
-      - 9216:9216
-    restart: always
-
   cadvisor:
-    image: google/cadvisor:v0.33.0
+    image: registry.cn-shenzhen.aliyuncs.com/haoyu36/cadvisor
     volumes:
       - /:/rootfs:ro
       - /var/run:/var/run:rw
@@ -19,12 +11,47 @@ services:
       - 8080:8080
     restart: always
 
-  locust:
-    image: registry.cn-shenzhen.aliyuncs.com/haoyu36/locust_exporter:v0.3.0
-    environment:
-      LOCUST_EXPORTER_URI: http://192.168.1.133:8089
+  vmware:
+    image: registry.cn-shenzhen.aliyuncs.com/haoyu36/vmware_exporter
     ports:
-      - 9646:9646
+      - 9272:9272
+    environment:
+      VSPHERE_HOST: <HOST_IP> 
+      VSPHERE_IGNORE_SSL: "True"
+      VSPHERE_USER: <USER> 
+      VSPHERE_PASSWORD: <PASSWORD>
     restart: always
 
-    
+  mysql:
+    image: registry.cn-shenzhen.aliyuncs.com/haoyu36/mysqld-exporter
+    environment:
+      DATA_SOURCE_NAME: 'exporter:Admin123@(192.168.1.199:3306)/'
+    ports:
+      - 9104:9104
+    restart: always
+
+  redis:
+    image: registry.cn-shenzhen.aliyuncs.com/haoyu36/redis_exporter
+    environment:
+      REDIS_ADDR: '127.0.0.1:6379'
+      REDIS_USER: ''
+      REDIS_PASSWORD: ''
+    ports:
+      - 9121:9121
+    restart: always
+
+  mongodb:
+    image: registry.cn-shenzhen.aliyuncs.com/haoyu36/mongodb_exporter
+    environment:
+      MONGODB_URI: mongodb://<your mongodb ip>:27017
+    ports:
+      - 9216:9216
+    restart: always
+
+  elasticsearch:
+    image: registry.cn-shenzhen.aliyuncs.com/haoyu36/elasticsearch_exporter
+    command:
+      - '--es.uri=http://elasticsearch:9200'
+    ports:
+      - 9114:9114
+    restart: always
