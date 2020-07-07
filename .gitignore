@@ -1,10 +1,2 @@
-metrics/promethous/docker/prometheus_data
-
-metrics/components/grafana/grafana_data
-metrics/components/influxdb/data/data
-
-metrics/components/exporter/remote_storage_adapter/remote_storage_adapter
-metrics/components/exporter/redis/redis_exporter
-metrics/components/exporter/mysql/mysqld_exporter
-metrics/components/exporter/node_exporter/node_exporter
-
+promethous/docker/prometheus_data
+grafana/grafana_data
