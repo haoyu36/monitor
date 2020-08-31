@@ -57,14 +57,14 @@ scrape_configs:
   #     - files:
   #       - targets/mysql.json
 
-  # - job_name: 'federate'
-  #   scrape_interval: 5s
-  #   honor_labels: true
-  #   metrics_path: '/federate'
-  #   params:
-  #     'match[]':
-  #       - '{__name__=~".+"}'
-  #   file_sd_configs:    # 使用文件服务发现的方式
-  #     - files:
-  #       - targets/federate.json
+  - job_name: 'federate'
+    scrape_interval: 5s
+    honor_labels: true
+    metrics_path: '/federate'
+    params:
+      'match[]':
+        - '{__name__=~".+"}'
+    file_sd_configs:    # 使用文件服务发现的方式
+      - files:
+        - targets/federate.json
 

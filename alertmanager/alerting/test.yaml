@@ -1,0 +1,27 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: prometheus-test
+  namespace: arms-prom
+  labels:
+    prometheus: k8s
+    role: alert-rules
+spec:
+  groups:
+  - name: podinfo
+    rules:
+    # - alert: podinfo
+    #   annotations: 
+    #     na: zzzzzz
+    #   expr: sum (rate(container_cpu_usage_seconds_total{pod=~"podinfo-primary.*",namespace="flagger"}[1m])) by (pod_name) > 0
+    #   for: 10s
+    #   labels:
+    #     step: 20s
+    - alert: time
+      annotations: 
+        na: ss
+      expr: time() > 0
+      for: 10s
+      labels:
+        severity: critical
+
